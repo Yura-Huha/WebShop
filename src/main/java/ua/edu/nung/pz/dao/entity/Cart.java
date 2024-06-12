@@ -1,15 +1,16 @@
 package ua.edu.nung.pz.dao.entity;
 
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Cart {
     private User user;
-    private Good[] goods;
+    private Map<Good, Integer> goods = new HashMap<>();
 
     public Cart() {
     }
 
-    public Cart(User user, Good[] goods) {
+    public Cart(User user, Map<Good, Integer> goods) {
         this.user = user;
         this.goods = goods;
     }
@@ -22,19 +23,23 @@ public class Cart {
         this.user = user;
     }
 
-    public Good[] getGoods() {
+    public Map<Good, Integer> getGoods() {
         return goods;
     }
 
-    public void setGoods(Good[] goods) {
+    public void setGoods(Map<Good, Integer> goods) {
         this.goods = goods;
+    }
+
+    public void addGood(Good good, int quantity) {
+        this.goods.put(good, quantity);
     }
 
     @Override
     public String toString() {
         return "Cart{" +
                 "user=" + user +
-                ", goods=" + Arrays.toString(goods) +
+                ", goods=" + goods +
                 '}';
     }
 }

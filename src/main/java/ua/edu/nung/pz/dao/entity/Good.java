@@ -11,16 +11,19 @@ public class Good {
     private String[] photo;
     private int likes;
 
+    private Price price;
+
     public Good() {
     }
 
-    public Good(long id, String name, String description, String brand, String[] photo, int likes) {
+    public Good(long id, String name, String description, String brand, String[] photo, int likes, Price price) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.brand = brand;
         this.photo = photo;
         this.likes = likes;
+        this.price = price;
     }
 
     public long getId() {
@@ -41,6 +44,19 @@ public class Good {
 
     public String getDescription() {
         return description;
+    }
+
+    public String getShortDescription() {
+        if (description == null || description.isEmpty()) {
+            return "";
+        }
+        int firstDotIndex = description.indexOf(".");
+        int maxLength = 200;
+
+        if(firstDotIndex != -1 && firstDotIndex <= maxLength) {
+            return description.substring(0, firstDotIndex + 1);
+        }
+        return description.substring(0, Math.min(description.length(), maxLength));
     }
 
     public void setDescription(String description) {
@@ -69,6 +85,14 @@ public class Good {
 
     public void setLikes(int likes) {
         this.likes = likes;
+    }
+
+    public Price getPrice() {
+        return price;
+    }
+
+    public void setPrice(Price price) {
+        this.price = price;
     }
 
     @Override

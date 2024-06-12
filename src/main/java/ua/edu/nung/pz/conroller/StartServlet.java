@@ -6,6 +6,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.util.logging.*;
+import ua.edu.nung.pz.dao.entity.Cart;
 import ua.edu.nung.pz.dao.entity.Firebase;
 import ua.edu.nung.pz.dao.entity.User;
 import ua.edu.nung.pz.dao.repository.UserRepository;
@@ -18,15 +20,22 @@ import java.util.Properties;
 
 @WebServlet(name = "StartServlet", urlPatterns = {"/*"}, loadOnStartup = 1)
 public class StartServlet extends HttpServlet {
+    private static final Logger logger = Logger.getLogger(StartServlet.class.getName());
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         PrintWriter out = response.getWriter();
         String context = "";
-        HttpSession httpSession = request.getSession();
-        User user = (User) httpSession.getAttribute(User.USER_SESSION_NAME);
-        String userName = user == null ? "" : user.getDisplayName();
+        HttpSession httpSession = request.getSession(false);
+        User user;
+        String userName = "";
+        if (httpSession != null) {
+            user = (User) httpSession.getAttribute(User.USER_SESSION_NAME);
+            userName = user == null ? "" : user.getDisplayName();
+        }
+
+        logger.info("Successfully started");
 
         switch (request.getPathInfo()) {
             case "/contacts":
@@ -48,6 +57,13 @@ public class StartServlet extends HttpServlet {
                 .getFullPage();
 
         out.println(builderPage);
+
+        out.println("<script>");
+        out.println("document.addEventListener('DOMContentLoaded', function() {");
+        out.println("const cartItemCount = " + getCartItemCount(httpSession) + ";");
+        out.println("document.getElementById('cart-count').textContent = cartItemCount;");
+        out.println("});");
+        out.println("</script>");
 
         // TODO remove test code
         UserRepository userRepository = new UserRepository();
@@ -76,14 +92,15 @@ public class StartServlet extends HttpServlet {
             String firebaseResponse = firebase.signInWithEmailAndPassword(user.getEmail(), user.getPassword());
             if(firebaseResponse.equals(Firebase.PASSWORD_OK)) {
                 System.out.println(Firebase.PASSWORD_OK);
-                user.setDisplayName("Best User");
+                user.setDisplayName("Petro");
                 httpSession = request.getSession();
                 httpSession.setAttribute(User.USER_SESSION_NAME, user);
+                logger.info("Successfully login " + user.getEmail());
             }  else {
-                System.out.println("Wrong Password");
+                logger.info("Wrong Password " + user.getEmail());
             }
         } else {
-            System.out.println("User NOT Exist");
+            logger.info("User NOT Exist " + user.getEmail());
             String userMsg = Firebase.getInstance().createUser(user);
         }
 
@@ -101,6 +118,7 @@ public class StartServlet extends HttpServlet {
         viewConfig.setPath(pathBuilder);
 
         initFirebase();
+        initLogger();
     }
 
     private void initFirebase() {
@@ -117,7 +135,28 @@ public class StartServlet extends HttpServlet {
         Firebase.getInstance().setSignInUrl(props.getProperty("signInUrl"));
         Firebase.getInstance().init();
     }
+
+    private void initLogger() {
+        try {
+            Handler fh = new FileHandler(getServletContext().getRealPath("logs/app.log"));
+            fh.setFormatter(new SimpleFormatter());
+            Logger.getLogger("").addHandler(fh);
+            Logger.getLogger("").addHandler(new ConsoleHandler());
+            Logger.getLogger("").setLevel(Level.INFO);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private int getCartItemCount(HttpSession session) {
+        if (session != null) {
+            User user = (User) session.getAttribute(User.USER_SESSION_NAME);
+            if (user != null) {
+                Cart cart = (Cart) session.getAttribute("cart");
+                if (cart != null && cart.getGoods() != null) {
+                    return cart.getGoods().values().stream().mapToInt(Integer::intValue).sum();
+                }
+            }
+        }
+        return 0;
+    }
 }
-
-
-
