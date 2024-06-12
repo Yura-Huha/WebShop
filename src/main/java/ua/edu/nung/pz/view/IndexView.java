@@ -1,21 +1,89 @@
 package ua.edu.nung.pz.view;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 public class IndexView {
-    public static String getPage(String title, String body) {
-        return "<!doctype html>\r\n" + //
-                "<html lang=\"en\">\r\n" + //
-                "  <head>\r\n" + //
-                "    <meta charset=\"utf-8\">\r\n" + //
-                "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\r\n" + //
-                "    <title>" + title + "</title>\r\n" + //
-                "    <link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css\" rel=\"stylesheet\" integrity=\"sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH\" crossorigin=\"anonymous\">\r\n"
-                + //
-                "  </head>\r\n" + //
-                "  <body>\r\n" + //
-                body +
-                "    <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js\" integrity=\"sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz\" crossorigin=\"anonymous\"></script>\r\n"
-                + //
-                "  </body>\r\n" + //
-                "</html>";
+    private String path;
+    private static IndexView indexView = new IndexView();
+    private IndexView() {}
+
+    public static IndexView getInstance() {
+        return indexView;
+    }
+    public String getPage(String title, String body) {
+        return getHtml("emptyPage")
+                .replace("<!--####title###-->", title)
+                .replace("<!--####body###-->", body);
+    }
+
+    public String getBody(String header, String footer, String context) {
+        return header +
+                "<div class=\"container\">" +
+                context +
+                "</div>" +
+                footer;
+    }
+
+    public String getHeader(String userName) {
+        String html = getHtml("headerPartial");
+        if (userName.length() > 0){
+            html = conditionalTextDelete(html, "usernameNotLogin")
+                    .replace("<!--###username###-->", userName);
+        } else {
+            html = conditionalTextDelete(html, "usernameLoginedIn");
+        }
+        return html;
+    }
+
+    public String getFooter(String footer) {
+        return getHtml("footerPartial");
+    }
+
+    public String getLoginForm() {
+        return getHtml("loginFormPartial");
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    private String getHtml(String filename) {
+        StringBuilder strb = new StringBuilder("\n");
+        Path file = Paths.get(path + filename + ".html");
+        Charset charset = Charset.forName("UTF-8");
+
+        try (BufferedReader reader = Files.newBufferedReader(file, charset))
+        {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                strb.append(line).append("\n");
+            }
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return strb.toString();
+    }
+
+    private String conditionalTextDelete(String html, String markToDelete){
+        String startMarker = "<!--Variable ###" + markToDelete + "###-->";
+        String endMarker = "<!--endVariable-->";
+        int startIndex = html.indexOf(startMarker);
+        if(startIndex == -1){
+            return html;
+        }
+        int endIndex = html.indexOf(endMarker, startIndex);
+        if(endIndex == -1){
+            return html;
+        }
+        String firstPart = html.substring(0, startIndex);
+        String endPart = html.substring(endIndex + endMarker.length());
+        return firstPart + endPart;
     }
 }
