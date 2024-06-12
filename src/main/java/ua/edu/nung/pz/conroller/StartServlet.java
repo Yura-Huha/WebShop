@@ -9,6 +9,8 @@ import jakarta.servlet.http.HttpSession;
 import ua.edu.nung.pz.model.Firebase;
 import ua.edu.nung.pz.model.User;
 import ua.edu.nung.pz.view.IndexView;
+import ua.edu.nung.pz.view.MainPage;
+import ua.edu.nung.pz.view.ViewConfig;
 
 import java.io.*;
 import java.util.Properties;
@@ -25,7 +27,7 @@ public class StartServlet extends HttpServlet {
         String context = "";
         HttpSession httpSession = request.getSession();
         User user = (User) httpSession.getAttribute(User.USER_SESSION_NAME);
-        String username = user == null ? "" : user.getDisplayName();
+        String userName = user == null ? "" : user.getDisplayName();
 
         switch (request.getPathInfo()) {
             case "/contacts":
@@ -44,7 +46,7 @@ public class StartServlet extends HttpServlet {
 
 
         body = IndexView.getInstance().getBody(
-                IndexView.getInstance().getHeader(username),
+                IndexView.getInstance().getHeader(userName),
                 IndexView.getInstance().getFooter(""),
                 context);
 
@@ -91,6 +93,10 @@ public class StartServlet extends HttpServlet {
     public void init() throws ServletException {
         super.init();
         String path = getServletContext().getRealPath("html/");
+
+        ViewConfig viewConfig = ViewConfig.getInstance();
+        viewConfig.setPath(path);
+
         IndexView indexView = IndexView.getInstance();
         indexView.setPath(path);
 
@@ -98,7 +104,6 @@ public class StartServlet extends HttpServlet {
     }
 
     private void initFirebase() {
-        String[] firebaseProp = new String[4];
         Properties props = new Properties();
         InputStream is = getClass().getClassLoader().getResourceAsStream("app.properties");
         try {
@@ -113,6 +118,8 @@ public class StartServlet extends HttpServlet {
         Firebase.getInstance().init();
     }
 }
+
+
 
 
 
